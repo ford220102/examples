@@ -1,11 +1,5 @@
-#!/usr/bin/env bash
-set -e
-
-# Install coursier
-curl -fLo cs https://github.com/coursier/coursier/releases/download/v2.0.3/cs-x86_64-pc-linux
-chmod +x cs
-
-ALMOND_VERSION=0.11.1
+#!/bin/bash
+set -x  # Enable debugging
 
 # Install almond for Scala 2.13
 ./cs launch "almond:$ALMOND_VERSION" --scala 2.13.3 -- \
@@ -26,7 +20,6 @@ ALMOND_VERSION=0.11.1
   </dev/null 2>&1 | grep -v '^Download'
 
 # Install almond 0.6.0 for Scala 2.11
-# TODO remove once TransmogrifAI and vegas are updated for Scala 2.12
 SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
 ./cs bootstrap \
   -r jitpack \
@@ -45,7 +38,10 @@ rm -f almond-scala-2.11
 jupyter labextension install --minimize=False \
   jupyterlab-plotly \
   @almond-sh/scalafmt \
-  @almond-sh/jupyterlab_variableinspector
+  @almond-sh/jupyterlab_variableinspector || echo "Failed to install extensions"
+
+# Rebuild JupyterLab with debugging
+jupyter lab build --dev-build=False --minimize=False || echo "JupyterLab build failed"
 
 # Set indentation to two spaces
 JUPYTER_CONFIG_DIR=$(jupyter --config-dir)
