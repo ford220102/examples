@@ -5,14 +5,14 @@ set -euxo pipefail
 
 # Step 1: Ensure system is up-to-date
 echo "Updating system..."
-mkdir -p /var/lib/apt/lists/partial  # Create the missing directory for apt
-apt-get update -y
-apt-get upgrade -y
-apt-get dist-upgrade -y
+sudo mkdir -p /var/lib/apt/lists/partial  # Create the missing directory for apt
+sudo apt-get update -y
+sudo apt-get upgrade -y
+sudo apt-get dist-upgrade -y
 
 # Step 2: Install required dependencies
 echo "Installing required dependencies..."
-apt-get install -y \
+sudo apt-get install -y \
   build-essential \
   python3-dev \
   python3-pip \
@@ -33,12 +33,12 @@ apt-get install -y \
 
 # Step 3: Clean up unnecessary files (optional)
 echo "Cleaning up unnecessary files..."
-apt-get autoremove -y
-apt-get clean -y
+sudo apt-get autoremove -y
+sudo apt-get clean -y
 
 # Step 4: Ensure proper file permissions
 echo "Fixing file permissions..."
-chown -R $(whoami):$(whoami) /var/lib/apt/lists
+sudo chown -R $(whoami):$(whoami) /var/lib/apt/lists
 
 # Step 5: Install JupyterLab and necessary extensions
 echo "Installing JupyterLab and extensions..."
