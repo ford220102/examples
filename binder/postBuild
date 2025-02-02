@@ -40,19 +40,7 @@ sudo apt-get clean -y
 echo "Fixing file permissions..."
 sudo chown -R $(whoami):$(whoami) /var/lib/apt/lists
 
-# Step 5: Install JupyterLab and necessary extensions
-echo "Installing JupyterLab and extensions..."
-pip install jupyterlab
-jupyter labextension install \
-  jupyterlab-plotly \
-  @almond-sh/scalafmt \
-  @almond-sh/jupyterlab_variableinspector || echo "Failed to install JupyterLab extensions"
-
-# Step 6: Rebuild JupyterLab with debugging
-echo "Rebuilding JupyterLab..."
-jupyter lab build --dev-build=False --minimize=False || echo "JupyterLab build failed"
-
-# Step 7: Install Scala kernels for different versions
+# Step 5: Install Scala kernels for different versions
 echo "Installing Scala kernels..."
 
 # Install Scala 2.12
@@ -80,8 +68,6 @@ SCALA_VERSION=2.11.12
   --metabrowse
 rm -f almond-scala-2.11
 
-# Step 8: Additional setup (if necessary)
+# Step 6: Additional setup (if necessary)
 echo "Performing any additional setup tasks..."
-# Add any other necessary steps here, like environment variables or further configuration
-
-echo "Setup completed successfully!"
+# Add any 
