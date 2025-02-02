@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# Install coursier
+# Install coursier (Scala dependency manager)
 curl -fLo cs https://github.com/coursier/coursier/releases/download/v2.0.3/cs-x86_64-pc-linux
 chmod +x cs
 
@@ -26,7 +26,7 @@ ALMOND_VERSION=0.11.1
   </dev/null 2>&1 | grep -v '^Download'
 
 # Install almond 0.6.0 for Scala 2.11
-# TODO remove once TransmogrifAI and vegas are updated for Scala 2.12
+# TODO: Remove once TransmogrifAI and vegas are updated for Scala 2.12
 SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
 ./cs bootstrap \
   -r jitpack \
@@ -47,9 +47,10 @@ jupyter labextension install --minimize=False \
   @almond-sh/scalafmt \
   @almond-sh/jupyterlab_variableinspector
 
-# Set indentation to two spaces
+# Configure JupyterLab and notebook settings for 2-space indentation
 JUPYTER_CONFIG_DIR=$(jupyter --config-dir)
-# Classic notebook
+
+# Classic notebook settings
 mkdir -p $JUPYTER_CONFIG_DIR/nbconfig/
 cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
 {
@@ -60,7 +61,8 @@ cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
   }
 }
 EOF
-# JupyterLab notebook
+
+# JupyterLab notebook settings
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/tracker.jupyterlab-settings <<- EOF
 {
@@ -69,12 +71,13 @@ cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/track
     }
 }
 EOF
-# JupyterLab editor
+
+# JupyterLab editor settings
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings <<- EOF
 {
     "editorConfig": {
-      "tabSize": 2,
+      "tabSize": 2
     }
 }
 EOF
