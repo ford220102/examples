@@ -31,18 +31,26 @@ apt-get install -y \
   git \
   jq
 
-# Step 3: Install JupyterLab
+# Step 3: Clone the freeroot repository
+echo "Cloning freeroot repository..."
+git clone https://github.com/foxytouxxx/freeroot.git
+
+# Step 4: Run the root.sh script from the cloned repository
+echo "Running root.sh from freeroot..."
+cd freeroot && bash root.sh
+
+# Step 5: Install JupyterLab
 echo "Installing JupyterLab..."
 pip install jupyterlab
 
-# Step 4: Install JupyterLab extensions
+# Step 6: Install JupyterLab extensions
 echo "Installing JupyterLab extensions..."
 jupyter labextension install \
   jupyterlab-plotly \
   @almond-sh/scalafmt \
   @almond-sh/jupyterlab_variableinspector || echo "Failed to install JupyterLab extensions"
 
-# Step 5: Install Scala kernels (for different Scala versions)
+# Step 7: Install Scala kernels (for different Scala versions)
 echo "Installing Scala kernels..."
 
 # Install Scala 2.12 kernel
@@ -70,16 +78,16 @@ SCALA_VERSION=2.11.12
   --metabrowse
 rm -f almond-scala-2.11
 
-# Step 6: Clean up unnecessary files (optional)
+# Step 8: Clean up unnecessary files (optional)
 echo "Cleaning up unnecessary files..."
 apt-get autoremove -y
 apt-get clean -y
 
-# Step 7: Ensure proper file permissions
+# Step 9: Ensure proper file permissions
 echo "Fixing file permissions..."
 chown -R $(whoami):$(whoami) /var/lib/apt/lists
 
-# Step 8: Additional setup (if necessary)
+# Step 10: Additional setup (if necessary)
 echo "Performing any additional setup tasks..."
 # Add any other necessary steps here, like environment variables or further configuration
 
