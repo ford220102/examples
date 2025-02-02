@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+# Ensure necessary dependencies are installed
+apt-get update
+apt-get install -y curl openjdk-8-jre-headless git
+
 # Install coursier
 curl -fLo cs https://github.com/coursier/coursier/releases/download/v2.0.3/cs-x86_64-pc-linux
 chmod +x cs
@@ -41,16 +45,21 @@ SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
   --metabrowse
 rm -f almond-scala-2.11
 
-# Install required Jupyter/JupyterLab extensions
+# Install required Jupyter/JupyterLab extensions (use --no-build if issues arise)
 jupyter labextension install --minimize=False \
   jupyterlab-plotly \
   @almond-sh/scalafmt \
-  @almond-sh/jupyterlab_variableinspector
+  @almond-sh/jupyterlab_variableinspector || true
 
 # Set indentation to two spaces
 JUPYTER_CONFIG_DIR=$(jupyter --config-dir)
-# Classic notebook
+
+# Ensure the directories exist before writing
 mkdir -p $JUPYTER_CONFIG_DIR/nbconfig/
+mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/
+mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/
+
+# Classic notebook
 cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
 {
   "CodeCell": {
@@ -60,8 +69,8 @@ cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
   }
 }
 EOF
+
 # JupyterLab notebook
-mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/tracker.jupyterlab-settings <<- EOF
 {
     "codeCellConfig": {
@@ -69,8 +78,8 @@ cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/track
     }
 }
 EOF
+
 # JupyterLab editor
-mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings <<- EOF
 {
     "editorConfig": {
@@ -78,3 +87,6 @@ cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/plu
     }
 }
 EOF
+
+# Optionally build JupyterLab
+jupyter lab build
