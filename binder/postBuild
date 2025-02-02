@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 set -e
 
-# Install coursier
+# Helper function to check for command success
+check_command() {
+    if [ $? -ne 0 ]; then
+        echo "Error during the execution of $1"
+        exit 1
+    fi
+}
+
+# Install coursier (Scala dependency manager)
+echo "Installing Coursier..."
 curl -fLo cs https://github.com/coursier/coursier/releases/download/v2.0.3/cs-x86_64-pc-linux
+check_command "curl -fLo cs"
 chmod +x cs
+check_command "chmod +x cs"
 
 ALMOND_VERSION=0.11.1
 
 # Install almond for Scala 2.13
+echo "Installing Almond for Scala 2.13..."
 ./cs launch "almond:$ALMOND_VERSION" --scala 2.13.3 -- \
   --install \
   --id scala213 \
@@ -15,8 +27,10 @@ ALMOND_VERSION=0.11.1
   --env "JAVA_OPTS=-XX:MaxRAMPercentage=80.0" \
   --variable-inspector \
   </dev/null 2>&1 | grep -v '^Download'
+check_command "Almond installation for Scala 2.13"
 
 # Install almond for Scala 2.12
+echo "Installing Almond for Scala 2.12..."
 ./cs launch "almond:$ALMOND_VERSION" --scala 2.12.12 -- \
   --install \
   --id scala212 \
@@ -24,10 +38,12 @@ ALMOND_VERSION=0.11.1
   --env "JAVA_OPTS=-XX:MaxRAMPercentage=80.0" \
   --variable-inspector \
   </dev/null 2>&1 | grep -v '^Download'
+check_command "Almond installation for Scala 2.12"
 
 # Install almond 0.6.0 for Scala 2.11
 # TODO remove once TransmogrifAI and vegas are updated for Scala 2.12
 SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
+echo "Installing Almond for Scala 2.11..."
 ./cs bootstrap \
   -r jitpack \
   -i user -I user:sh.almond:scala-kernel-api_$SCALA_VERSION:$ALMOND_VERSION \
@@ -35,21 +51,27 @@ SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
   --sources --default=true \
   -o almond-scala-2.11 \
   </dev/null 2>&1 | grep -v '^Download'
+check_command "Almond installation for Scala 2.11"
 ./almond-scala-2.11 --install --id scala211 --display-name "Scala (2.11)" \
   --command "java -XX:MaxRAMPercentage=80.0 -jar almond-scala-2.11 --id scala211 --display-name 'Scala (2.11)'" \
   --copy-launcher \
   --metabrowse
+check_command "Almond kernel for Scala 2.11"
 rm -f almond-scala-2.11
 
 # Install required Jupyter/JupyterLab extensions
+echo "Installing required JupyterLab extensions..."
 jupyter labextension install --minimize=False \
   jupyterlab-plotly \
   @almond-sh/scalafmt \
   @almond-sh/jupyterlab_variableinspector
+check_command "JupyterLab extensions installation"
 
 # Set indentation to two spaces
+echo "Configuring JupyterLab to use 2-space indentation..."
 JUPYTER_CONFIG_DIR=$(jupyter --config-dir)
-# Classic notebook
+
+# Classic notebook settings
 mkdir -p $JUPYTER_CONFIG_DIR/nbconfig/
 cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
 {
@@ -60,7 +82,8 @@ cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
   }
 }
 EOF
-# JupyterLab notebook
+
+# JupyterLab notebook settings
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/tracker.jupyterlab-settings <<- EOF
 {
@@ -69,12 +92,15 @@ cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/track
     }
 }
 EOF
-# JupyterLab editor
+
+# JupyterLab editor settings
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings <<- EOF
 {
     "editorConfig": {
-      "tabSize": 2,
+      "tabSize": 2
     }
 }
 EOF
+
+echo "Script execution complete."
