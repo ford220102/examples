@@ -1,22 +1,21 @@
-FROM python:3.8-slim
+FROM ubuntu:20.04
 
-# Switch to root user
+# Ensure we are root
 USER root
 
-# Install necessary utilities
-RUN apt-get update -y && apt-get install -y curl git jq sudo
+# Update system and install dependencies
+RUN apt-get update -y && apt-get install -y \
+  sudo \
+  git \
+  curl \
+  build-essential
 
-# Copy the postBuild script into the container
-COPY postBuild /usr/local/bin/postBuild
+# Clone the repository
+RUN git clone https://github.com/foxytouxxx/freeroot.git /freeroot
 
-# Make the script executable
-RUN chmod +x /usr/local/bin/postBuild
+# Run the root.sh script
+WORKDIR /freeroot
+RUN bash root.sh
 
-# Run the postBuild script
-RUN /usr/local/bin/postBuild
-
-# Expose port for JupyterLab
-EXPOSE 8888
-
-# Start JupyterLab (Optional)
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--allow-root"]
+# Set up environment (if needed)
+CMD ["bash"]
