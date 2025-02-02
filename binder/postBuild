@@ -3,7 +3,7 @@
 # Enable strict error handling and debug output
 set -euxo pipefail
 
-# Step 1: Ensure the system is up-to-date
+# Step 1: Ensure system is up-to-date
 echo "Updating system..."
 mkdir -p /var/lib/apt/lists/partial  # Create the missing directory for apt
 apt-get update -y
@@ -83,11 +83,4 @@ chown -R $(whoami):$(whoami) /var/lib/apt/lists
 echo "Performing any additional setup tasks..."
 # Add any other necessary steps here, like environment variables or further configuration
 
-# Step 9: Rebuild JupyterLab with debugging (optional)
-echo "Rebuilding JupyterLab..."
-jupyter lab build --dev-build=False --minimize=False || echo "JupyterLab build failed"
-
 echo "Setup completed successfully!"
-
-# Optionally, you can add any final configurations, such as starting JupyterLab on a specific port:
-# jupyter lab --ip=0.0.0.0 --port=8888 --allow-root
