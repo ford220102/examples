@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -x  # Enable command logging
 
 # Install coursier
 curl -fLo cs https://github.com/coursier/coursier/releases/download/v2.0.3/cs-x86_64-pc-linux
@@ -26,7 +27,6 @@ ALMOND_VERSION=0.11.1
   </dev/null 2>&1 | grep -v '^Download'
 
 # Install almond 0.6.0 for Scala 2.11
-# TODO remove once TransmogrifAI and vegas are updated for Scala 2.12
 SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
 ./cs bootstrap \
   -r jitpack \
@@ -60,6 +60,7 @@ cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
   }
 }
 EOF
+
 # JupyterLab notebook
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/tracker.jupyterlab-settings <<- EOF
@@ -69,12 +70,16 @@ cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/track
     }
 }
 EOF
+
 # JupyterLab editor
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings <<- EOF
 {
     "editorConfig": {
-      "tabSize": 2,
+      "tabSize": 2
     }
 }
 EOF
+
+# Build JupyterLab
+jupyter lab build --debug
