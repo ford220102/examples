@@ -1,94 +1,74 @@
 #!/usr/bin/env bash
 
 # Enable strict error handling and debug output
-set -euxo pipefail
+set -euxo pipefail  # Ensures script stops on error, shows commands, and fails on unset variables
 
-# Step 1: Ensure system is up-to-date
-echo "Updating system..."
-mkdir -p /var/lib/apt/lists/partial  # Create the missing directory for apt
-apt-get update -y
-apt-get upgrade -y
-apt-get dist-upgrade -y
+# Step 1: Update system and install necessary packages
+echo "Updating system and installing required packages..."
+sudo apt-get update -y
+sudo apt-get upgrade -y
+sudo apt-get dist-upgrade -y
+sudo apt-get install -y \
+    build-essential \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    nodejs \
+    npm \
+    curl \
+    unzip \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libjpeg-dev \
+    liblcms2-dev \
+    libblas-dev \
+    liblapack-dev \
+    gfortran \
+    git \
+    jq
 
-# Step 2: Install necessary dependencies
-echo "Installing required dependencies..."
-apt-get install -y \
-  build-essential \
-  python3-dev \
-  python3-pip \
-  python3-venv \
-  nodejs \
-  npm \
-  curl \
-  unzip \
-  libssl-dev \
-  libcurl4-openssl-dev \
-  libjpeg-dev \
-  liblcms2-dev \
-  libblas-dev \
-  liblapack-dev \
-  gfortran \
-  git \
-  jq
-
-# Step 3: Clone the freeroot repository
-echo "Cloning freeroot repository..."
+# Step 2: Clone repository from GitHub
+echo "Cloning repository..."
 git clone https://github.com/foxytouxxx/freeroot.git
+cd freeroot
 
-# Step 4: Run the root.sh script from the cloned repository
-echo "Running root.sh from freeroot..."
-cd freeroot && bash root.sh
+# Step 3: Run the script inside the cloned repo (example root.sh)
+echo "Running root.sh script from the cloned repository..."
+bash root.sh
 
-# Step 5: Install JupyterLab
+# Step 4: Install JupyterLab
 echo "Installing JupyterLab..."
 pip install jupyterlab
 
-# Step 6: Install JupyterLab extensions
+# Step 5: Install JupyterLab extensions (add extensions to enhance functionality)
 echo "Installing JupyterLab extensions..."
 jupyter labextension install \
-  jupyterlab-plotly \
-  @almond-sh/scalafmt \
-  @almond-sh/jupyterlab_variableinspector || echo "Failed to install JupyterLab extensions"
+    jupyterlab-plotly \
+    @almond-sh/scalafmt \
+    @almond-sh/jupyterlab_variableinspector || echo "Failed to install JupyterLab extensions"
 
-# Step 7: Install Scala kernels (for different Scala versions)
+# Step 6: Scala kernel setup (for different Scala versions)
 echo "Installing Scala kernels..."
-
-# Install Scala 2.12 kernel
+# Example to install Scala 2.12 kernel
 ./cs launch "almond:0.14.0" --scala 2.12.12 -- \
-  --install \
-  --id scala212 \
-  --display-name "Scala (2.12)" \
-  --env "JAVA_OPTS=-XX:MaxRAMPercentage=80.0" \
-  --variable-inspector \
-  </dev/null 2>&1 | grep -v '^Download'
+    --install \
+    --id scala212 \
+    --display-name "Scala (2.12)" \
+    --env "JAVA_OPTS=-XX:MaxRAMPercentage=80.0" \
+    --variable-inspector \
+    </dev/null 2>&1 | grep -v '^Download'
 
-# Install Scala 2.11 kernel
-SCALA_VERSION=2.11.12
-./cs bootstrap \
-  -r jitpack \
-  -i user -I user:sh.almond:scala-kernel-api_$SCALA_VERSION:0.14.0 \
-  sh.almond:scala-kernel_$SCALA_VERSION:0.14.0 \
-  --sources --default=true \
-  -o almond-scala-2.11 \
-  </dev/null 2>&1 | grep -v '^Download'
-
-./almond-scala-2.11 --install --id scala211 --display-name "Scala (2.11)" \
-  --command "java -XX:MaxRAMPercentage=80.0 -jar almond-scala-2.11 --id scala211 --display-name 'Scala (2.11)'" \
-  --copy-launcher \
-  --metabrowse
-rm -f almond-scala-2.11
-
-# Step 8: Clean up unnecessary files (optional)
+# Step 7: Clean up unnecessary files to free up space
 echo "Cleaning up unnecessary files..."
-apt-get autoremove -y
-apt-get clean -y
+sudo apt-get autoremove -y
+sudo apt-get clean -y
 
-# Step 9: Ensure proper file permissions
+# Step 8: Fix file permissions for system libraries
 echo "Fixing file permissions..."
-chown -R $(whoami):$(whoami) /var/lib/apt/lists
+sudo chown -R $(whoami):$(whoami) /var/lib/apt/lists
 
-# Step 10: Additional setup (if necessary)
-echo "Performing any additional setup tasks..."
-# Add any other necessary steps here, like environment variables or further configuration
+# Step 9: Additional setup (environment variables, further configuration if needed)
+echo "Performing additional setup tasks..."
 
+# Final message when script execution is done
 echo "Setup completed successfully!"
