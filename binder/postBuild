@@ -1,13 +1,54 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
-# Install coursier
-curl -fLo cs https://github.com/coursier/coursier/releases/download/v2.0.3/cs-x86_64-pc-linux
-chmod +x cs
+# Enable debugging mode to print every command executed
+set -x  
 
-ALMOND_VERSION=0.11.1
+# Ensure all required components are available
+# First, ensure the environment is properly activated and configured
+source activate ${NB_PYTHON_PREFIX}
 
-# Install almond for Scala 2.13
+# Use strict shell settings to avoid surprises in execution
+set -euxo pipefail
+
+# Create a directory to hold build reports for later inspection
+mkdir _reports_
+
+# Install nodejs dependencies and build the project (via Yarn)
+# Capture output in a log for review
+(time yarn) 2>&1 | tee _reports_/00_yarn.txt
+
+# Build the JupyterLab assets for development and production
+# Capture output in a log for review
+(time yarn build:dev:prod:minimize:report) 2>&1 | tee _reports_/01_build.txt
+
+# Move the generated webpack bundle analyzer to the reports directory for easier access
+mv dev_mode/static/webpack-bundle-analyzer.html _reports/
+
+# Install Python dependencies from the development environment
+# This includes the necessary JupyterLab extensions and dependencies
+(time pip install -v -e .[dev] --no-build-isolation) 2>&1 | tee _reports_/02_pip_install.txt
+
+# Copy the Jupyter configuration file to the user's home directory
+mkdir -p ~/.jupyter
+cp binder/jupyter_config.py ~/.jupyter/
+
+# Capture Python-related information for debugging purposes
+(time pip list) 2>&1 | tee _reports_/03_pip_list.txt
+(time pip check || echo FAIL) 2>&1 | tee _reports_/04_pip_check.txt
+
+# Troubleshoot and capture information on the current Jupyter configuration
+(time jupyter troubleshoot) 2>&1 | tee _reports_/10_troubleshoot.txt
+(time jupyter notebook --show-config) 2>&1 | tee _reports_/11_notebook_show_config.txt
+(time jupyter lab --show-config) 2>&1 | tee _reports_/12_lab_show_config.txt
+
+# List server extensions installed in JupyterLab
+(time jupyter server extension list) 2>&1 | tee _reports_/13_server_extension_list.txt
+
+# List the installed JupyterLab extensions
+(time jupyter labextension list) 2>&1 | tee _reports_/14_labextension_list.txt
+
+# Now proceed with installing Scala kernels using Almond
+# First, install Almond for Scala 2.13
 ./cs launch "almond:$ALMOND_VERSION" --scala 2.13.3 -- \
   --install \
   --id scala213 \
@@ -16,7 +57,7 @@ ALMOND_VERSION=0.11.1
   --variable-inspector \
   </dev/null 2>&1 | grep -v '^Download'
 
-# Install almond for Scala 2.12
+# Then install Almond for Scala 2.12
 ./cs launch "almond:$ALMOND_VERSION" --scala 2.12.12 -- \
   --install \
   --id scala212 \
@@ -25,8 +66,7 @@ ALMOND_VERSION=0.11.1
   --variable-inspector \
   </dev/null 2>&1 | grep -v '^Download'
 
-# Install almond 0.6.0 for Scala 2.11
-# TODO remove once TransmogrifAI and vegas are updated for Scala 2.12
+# Install Almond 0.6.0 for Scala 2.11, specifying the version
 SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
 ./cs bootstrap \
   -r jitpack \
@@ -35,21 +75,29 @@ SCALA_VERSION=2.11.12 ALMOND_VERSION=0.6.0
   --sources --default=true \
   -o almond-scala-2.11 \
   </dev/null 2>&1 | grep -v '^Download'
+
+# Install the kernel for Scala 2.11 and clean up
 ./almond-scala-2.11 --install --id scala211 --display-name "Scala (2.11)" \
   --command "java -XX:MaxRAMPercentage=80.0 -jar almond-scala-2.11 --id scala211 --display-name 'Scala (2.11)'" \
   --copy-launcher \
   --metabrowse
 rm -f almond-scala-2.11
 
-# Install required Jupyter/JupyterLab extensions
+# Install required JupyterLab extensions for Scala, Plotly, and other necessary tools
+# Extensions improve the JupyterLab environment with extra functionality
 jupyter labextension install --minimize=False \
   jupyterlab-plotly \
   @almond-sh/scalafmt \
-  @almond-sh/jupyterlab_variableinspector
+  @almond-sh/jupyterlab_variableinspector || echo "Failed to install extensions"
 
-# Set indentation to two spaces
+# Rebuild JupyterLab assets with debugging enabled
+# This will make it easier to spot issues during the build process
+jupyter lab build --dev-build=False --minimize=False || echo "JupyterLab build failed"
+
+# Configure JupyterLab to use two-space indentation for code cells
 JUPYTER_CONFIG_DIR=$(jupyter --config-dir)
-# Classic notebook
+
+# Classic notebook configuration for code cells
 mkdir -p $JUPYTER_CONFIG_DIR/nbconfig/
 cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
 {
@@ -60,7 +108,8 @@ cat > $JUPYTER_CONFIG_DIR/nbconfig/notebook.json <<- EOF
   }
 }
 EOF
-# JupyterLab notebook
+
+# JupyterLab notebook extension configuration
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/tracker.jupyterlab-settings <<- EOF
 {
@@ -69,12 +118,19 @@ cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/notebook-extension/track
     }
 }
 EOF
-# JupyterLab editor
+
+# JupyterLab file editor configuration
 mkdir -p $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/
 cat > $JUPYTER_CONFIG_DIR/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings <<- EOF
 {
     "editorConfig": {
-      "tabSize": 2,
+      "tabSize": 2
     }
 }
 EOF
+
+# Clean up unnecessary files to save space
+rm -rf \
+    ~/.cache \
+    dev_mode/stats.json \
+    node_modules/@stdlib
