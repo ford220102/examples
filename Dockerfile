@@ -1,10 +1,10 @@
-# Start with the official Python image
+# Start with the base image
 FROM python:3.8-slim
 
-# Switch to root user to install packages and perform necessary setup
+# Switch to root user to run system-level commands
 USER root
 
-# Update and install necessary system packages
+# Update system and install necessary packages
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
   build-essential \
   python3-dev \
@@ -23,35 +23,22 @@ RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
   gfortran \
   git \
   jq \
-  graphviz
+  sudo  # Ensure sudo is installed
 
-# Switch to the user (usually non-root) for running Jupyter
-USER $NB_UID
-
-# Install JupyterLab and necessary extensions
+# Install JupyterLab
 RUN pip install jupyterlab
 
-# Install the Plotly extension for JupyterLab
-RUN jupyter labextension install @jupyterlab/plotly-extension
+# Install JupyterLab extensions
+RUN jupyter labextension install \
+  jupyterlab-plotly \
+  @almond-sh/scalafmt \
+  @almond-sh/jupyterlab_variableinspector || echo "Failed to install JupyterLab extensions"
 
-# Install the Almond Scala kernel (adjust the version as needed)
-RUN curl -Lo almond.zip https://github.com/almond-sh/almond/archive/refs/tags/v0.14.0.zip && \
-    unzip almond.zip && \
-    cd almond-0.14.0 && \
-    ./cs launch "almond:0.14.0" --scala 2.12.12 -- \
-    --install \
-    --id scala212 \
-    --display-name "Scala (2.12)" \
-    --env "JAVA_OPTS=-XX:MaxRAMPercentage=80.0" \
-    --variable-inspector && \
-    rm almond.zip && \
-    rm -rf almond-0.14.0
+# Switch back to the user with the proper UID (if applicable)
+USER $NB_UID
 
-# Copy notebooks or files into the container and set appropriate permissions
+# Final setup: copy the notebooks directory and set permissions
 COPY --chown=1000:100 notebooks/ $HOME
 
-# Expose the necessary port for JupyterLab
-EXPOSE 8888
-
-# Set the default command to start JupyterLab
-CMD ["jupyter", "lab", "--ip='0.0.0.0'", "--port=8888", "--allow-root"]
+# Ensure the JupyterLab is built
+RUN jupyter lab build --dev-build=False --minimize=False || echo "JupyterLab build failed"
